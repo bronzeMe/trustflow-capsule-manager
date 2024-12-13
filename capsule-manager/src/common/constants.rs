@@ -18,7 +18,7 @@ use std::collections::HashMap;
 // constant define
 pub const RSA_BIT_LEN: u32 = 3072;
 pub(crate) const HASH_SEPARATOR: &str = ".";
-pub const CERT_DAYS: u32 = 365;
+pub const CERT_DAYS: u32 = 3650;
 pub(crate) const TEE_PLATFORM_SGX: &str = "SGX_DCAP";
 pub(crate) const TEE_PLATFORM_TDX: &str = "TDX";
 const TEE_PLATFORM_CSV: &str = "CSV";
@@ -34,4 +34,8 @@ lazy_static! {
         m.insert("CN", "CapsuleManager");
         m
     };
+}
+
+lazy_static! {
+    pub static ref FIRST_SIGN_TIME: i64 = chrono::Local::now().timestamp();
 }

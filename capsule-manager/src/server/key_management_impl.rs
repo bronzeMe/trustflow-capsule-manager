@@ -18,6 +18,7 @@ use crate::core::model;
 use crate::core::model::policy;
 use crate::core::model::request::{Environment, TeeIdentity, TeeInfo, TeePlatform};
 use crate::error::errors::{AuthResult, Error, ErrorCode, ErrorLocation};
+use crate::utils::crypto::gen_rsa_key_pair_from_seed;
 use crate::utils::jwt::jwa::Secret;
 use crate::utils::tool::{
     get_public_key_from_cert_chain, sha256, vec_str_to_vec_u8, verify_cert_chain,
@@ -29,7 +30,8 @@ use prost::Message;
 use sdc_apis::secretflowapis::v2::sdc::capsule_manager::{
     CreateDataKeysRequest, CreateResultDataKeyRequest, DeleteDataKeyRequest, EncryptedRequest,
     EncryptedResponse, GetDataKeysRequest, GetDataKeysResponse, GetExportDataKeyRequest,
-    GetExportDataKeyResponse, RegisterCertRequest,
+    GetExportDataKeyResponse, GetTlsAssetRequest, GetTlsAssetResponse, RegisterCertRequest,
+    TlsAsset,
 };
 use sdc_apis::secretflowapis::v2::sdc::{UnifiedAttestationAttributes, UnifiedAttestationPolicy};
 use sdc_apis::secretflowapis::v2::{Code, Status};
@@ -76,17 +78,14 @@ fn ra_verify(
             e
         )
     })?;
-    trustflow_attestation_rs::attestation_report_verify(
-        report_json_str,
-        policy_json_str.as_str(),
-    )
-    .map_err(|e| {
-        errno!(
-            ErrorCode::PermissionDenied,
-            "attestation report verify failed: {:?}",
-            e
-        )
-    })?;
+    trustflow_attestation_rs::attestation_report_verify(report_json_str, policy_json_str.as_str())
+        .map_err(|e| {
+            errno!(
+                ErrorCode::PermissionDenied,
+                "attestation report verify failed: {:?}",
+                e
+            )
+        })?;
     Ok(
         trustflow_attestation_rs::parse_attributes_from_report(report_json_str).map_err(|e| {
             errno!(
@@ -216,6 +215,141 @@ impl CapsuleManagerImpl {
         let response = GetDataKeysResponse {
             data_keys,
             // FIXME: change to certificate
+            cert: String::from_utf8(self.kek_cert.to_owned())?,
+        };
+        let secret = Secret::public_key_from_cert_pem(request_content.cert.as_bytes())?;
+        super::encrypt_response(secret, &response)
+    }
+
+    pub async fn get_tls_asset_impl(
+        &self,
+        encrypt_request: &EncryptedRequest,
+    ) -> AuthResult<EncryptedResponse> {
+        let (request_content, _) =
+            super::get_request::<GetTlsAssetRequest>(&self.kek_pri, encrypt_request)?;
+
+        let mut resource_request_innner: model::request::ResourceRequest =
+            from(&request_content.resource_request)?;
+        log::debug!("resource request {:?}", resource_request_innner);
+
+        // 1. verify RA
+        //   in simulation mode, ra verification will be passed if
+        //      attestation_report is none.
+        if !(self.mode == "simulation") || request_content.attestation_report.is_some() {
+            let report_json_str = serde_json::to_string(&request_content.attestation_report)
+                .map_err(|e| {
+                    errno!(
+                        ErrorCode::InternalErr,
+                        "report {:?} to json err: {:?}",
+                        &request_content.attestation_report,
+                        e
+                    )
+                })?;
+
+            // get report raw data
+            let resource_request = request_content
+                .resource_request
+                .as_ref()
+                .ok_or(errno!(ErrorCode::InvalidArgument, "request is empty"))?;
+
+            let report_data_raw = [
+                request_content.cert.as_bytes(),
+                resource_request.encode_to_vec().as_ref(),
+            ]
+            .join(HASH_SEPARATOR.as_bytes());
+
+            let attributes = ra_verify(&report_json_str, &report_data_raw)?;
+
+            let (tee_identity, tee_platform) = match attributes.str_tee_platform.as_str() {
+                "SGX_DCAP" => (
+                    TeeIdentity::SGX {
+                        mr_enclave: attributes.hex_ta_measurement,
+                        mr_signer: attributes.hex_signer,
+                    },
+                    TeePlatform::SGX,
+                ),
+                "TDX" => (
+                    TeeIdentity::TDX {
+                        mr_plat: attributes.hex_platform_measurement,
+                        mr_boot: attributes.hex_boot_measurement,
+                        mr_ta: attributes.hex_ta_measurement,
+                    },
+                    TeePlatform::TDX,
+                ),
+                "CSV" => (
+                    TeeIdentity::CSV {
+                        mr_boot: attributes.hex_boot_measurement,
+                    },
+                    TeePlatform::CSV,
+                ),
+                _ => {
+                    return Err(errno!(ErrorCode::UnsupportedErr, "unsupported platform"));
+                }
+            };
+
+            resource_request_innner.global_attributes.env = Some(Environment {
+                request_time: Some(chrono::offset::Utc::now()),
+                tee: Some(TeeInfo {
+                    platform: tee_platform,
+                    identity: Some(tee_identity),
+                }),
+            })
+        }
+
+        // 2. enforce data policy
+        // each resource uri should follow data policy
+        for single_request in resource_request_innner.iter() {
+            let resource_uri: model::ResourceUri = single_request.resource_uri.parse()?;
+            let ref scope = single_request.global_attributes.scope;
+            // judge whether the owner of data key is equal to the owner of data policy
+            let data_key_party = self
+                .storage_engine
+                .get_data_party(&single_request.resource_uri)
+                .await?;
+            let policy_party = self
+                .storage_engine
+                .get_policy_party_by_id(&resource_uri.data_uuid, &scope)
+                .await?;
+            cm_assert!(
+                data_key_party == policy_party,
+                "the owner of data key {} != the owner of data policy {}",
+                &data_key_party,
+                &policy_party
+            );
+
+            // execute data policy
+            let policy = self
+                .storage_engine
+                .get_data_policy_by_id(&resource_uri.data_uuid, scope)
+                .await?;
+            let policy_inner: policy::Policy = from(&policy)?;
+            self.policy_enforcer
+                .enforce(&single_request, &policy_inner)?;
+        }
+
+        // 3. query data key
+        let resource_uris: Vec<&str> = resource_request_innner
+            .iter()
+            .map(|x| x.resource_uri.as_str())
+            .collect();
+
+        let mut data_keys = self.storage_engine.get_data_keys(&resource_uris).await?;
+
+        // 4. generate rsa key pair from data_keys
+        data_keys.sort_by(|a, b| a.resource_uri.cmp(&b.resource_uri));
+        let data_keys_json = serde_json::to_string(&data_keys)?;
+
+        let seed = sha256(data_keys_json.as_bytes());
+        let (pkcs8_pri_key, x509_cert) = gen_rsa_key_pair_from_seed(seed)?;
+
+        let tls_asset = TlsAsset {
+            private_key: pkcs8_pri_key,
+            cert: x509_cert,
+        };
+
+        let response = GetTlsAssetResponse {
+            data_keys,
+            tls_asset: Some(tls_asset),
             cert: String::from_utf8(self.kek_cert.to_owned())?,
         };
         let secret = Secret::public_key_from_cert_pem(request_content.cert.as_bytes())?;

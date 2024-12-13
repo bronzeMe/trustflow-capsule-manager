@@ -433,7 +433,9 @@ dependencies = [
  "pem-rfc7468",
  "prost",
  "prost-types",
+ "rand",
  "rhai",
+ "rsa",
  "sdc_apis",
  "sea-orm",
  "serde",
@@ -2411,9 +2413,9 @@ dependencies = [
 
 [[package]]
 name = "sdc_apis"
-version = "0.2.1-dev20240222"
+version = "0.3.0-dev20241104"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c52f285b0bbd55ac866e8fc80f3aa5a637be676350d7f746fa5b9fcc3d4e6ed"
+checksum = "867098055d1bc923014fa62e5d6463fdc2177cfc6569a71fcee81715da58f2cb"
 dependencies = [
  "prost",
  "prost-types",
@@ -3388,9 +3390,9 @@ dependencies = [
 
 [[package]]
 name = "trustflow-attestation-rs"
-version = "0.3.1-dev20240726"
+version = "0.3.1-dev20241203"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee72c217eb6b1a3ec173bd064e68816a79c3e5c3d60cb46c1952db351bdf7108"
+checksum = "415a50e09416b4204f568c3d2553089955327cb2a405171c8e243426b3815781"
 dependencies = [
  "sdc_apis",
  "serde_json",
@@ -3399,9 +3401,9 @@ dependencies = [
 
 [[package]]
 name = "trustflow-attestation-sys"
-version = "0.3.1-dev20240726"
+version = "0.3.1-dev20241104"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6eeaf66ac6c3e73d2ec6bf06f1b96fef6ebb8cef03a2cac7939b3a1f54a411d"
+checksum = "febc6809e48e5f97dc258d9f483c46958a46ba7532e1d4caf22674d7eb1c86c8"
 
 [[package]]
 name = "try-lock"

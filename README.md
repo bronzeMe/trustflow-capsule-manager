@@ -153,7 +153,7 @@ Remote Attestation is not enabled for this mode
 
 1. Build
     ```bash
-    ./script/build -p sim
+    ./script/build.sh -p sim
     ```
 2. Run
    ```bash
@@ -162,7 +162,7 @@ Remote Attestation is not enabled for this mode
 ### SGX Mode
 1. Build
     ```bash
-    ./script/build -p sgx
+    ./script/build.sh -p sgx
     ```
 2. Run
    After entering 'script/occlum_instance', it runs in the same way as the chapter (Run Quickly by Docker Image#SGX mode)
@@ -170,7 +170,7 @@ Remote Attestation is not enabled for this mode
 ### TDX Mode
 1. Build
     ```bash
-    ./script/build -p tdx
+    ./script/build.sh -p tdx
     ```
 2. Modify PCCS config
 
@@ -183,7 +183,7 @@ Remote Attestation is not enabled for this mode
 ### CSV Mode
 1. Build
     ```bash
-    ./script/build -p csv
+    ./script/build.sh -p csv
     ```
 2. Run
    ```bash

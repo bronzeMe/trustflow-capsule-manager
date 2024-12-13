@@ -54,6 +54,11 @@ pub trait CapsuleManagerService {
         request: &capsule_manager::EncryptedRequest,
     ) -> AuthResult<capsule_manager::EncryptedResponse>;
 
+    async fn get_tls_asset(
+        &self,
+        request: &capsule_manager::EncryptedRequest,
+    ) -> AuthResult<capsule_manager::EncryptedResponse>;
+
     async fn delete_data_key(
         &self,
         request: &capsule_manager::EncryptedRequest,
@@ -320,6 +325,13 @@ impl CapsuleManagerService for CapsuleManagerImpl {
         self.get_data_keys_impl(request).await
     }
 
+    async fn get_tls_asset(
+        &self,
+        request: &capsule_manager::EncryptedRequest,
+    ) -> AuthResult<capsule_manager::EncryptedResponse> {
+        self.get_tls_asset_impl(request).await
+    }
+
     async fn delete_data_key(
         &self,
         request: &capsule_manager::EncryptedRequest,
@@ -368,7 +380,7 @@ impl CapsuleManagerService for CapsuleManagerImpl {
         &self,
         request: &capsule_manager::EncryptedRequest,
     ) -> AuthResult<capsule_manager::EncryptedResponse> {
-        self.delete_data_policy(request).await
+        self.delete_data_policy_impl(request).await
     }
 
     async fn delete_data_rule(

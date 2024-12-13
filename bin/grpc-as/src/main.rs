@@ -326,6 +326,34 @@ impl capsule_manager_server::CapsuleManager for CapsuleManagerGrpcServer {
         Ok(Response::new(reply))
     }
 
+    async fn get_tls_asset(
+        &self,
+        request: Request<EncryptedRequest>,
+    ) -> Result<Response<EncryptedResponse>, tonic::Status> {
+        let now = Instant::now();
+        let request_body = request.into_inner();
+        let reply = match self
+            .capsule_manager_service
+            .get_tls_asset(&request_body)
+            .await
+        {
+            Ok(response) => response,
+            Err(e) => EncryptedResponse {
+                status: Some(Status {
+                    code: e.errcode(),
+                    message: e.to_string(),
+                    details: vec![],
+                }),
+                message: None,
+            },
+        };
+        let elapsed = now.elapsed();
+        if let Some(ref status) = reply.status {
+            log::info!(target: "monitor", "|get_tls_asset|{:?}|{:?}|{:?}", if status.code == 0 {"Y"} else {"N"}, elapsed.as_millis(), status.message);
+        }
+        Ok(Response::new(reply))
+    }
+
     async fn create_data_policy(
         &self,
         request: Request<EncryptedRequest>,

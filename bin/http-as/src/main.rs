@@ -95,6 +95,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/v1/ra_report/get", post(get_ra_cert))
         .route("/api/v1/data_keys/create", post(create_data_keys))
         .route("/api/v1/data_keys/get", post(get_data_keys))
+        .route("/api/v1/tls_asset/get", post(get_tls_asset))
         .route("/api/v1/data_key/delete", post(delete_data_key))
         .route("/api/v1/export_data_key/get", post(get_export_data_key))
         .route("/api/v1/cert/register", post(register_cert))
@@ -193,6 +194,32 @@ async fn get_data_keys(
     let elapsed = now.elapsed();
     if let Some(ref status) = reply.status {
         log::info!(target: "monitor", "|get_data_keys|{:?}|{:?}|{:?}", if status.code == 0 {"Y"} else {"N"}, elapsed.as_millis(), status.message);
+    }
+    Ok(Json(reply))
+}
+
+async fn get_tls_asset(
+    State(capsule_manager_service): State<server::CapsuleManagerImpl>,
+    Json(encrypted_request): Json<EncryptedRequest>,
+) -> Result<Json<EncryptedResponse>, (StatusCode, String)> {
+    let now = Instant::now();
+    let reply = match capsule_manager_service
+        .get_tls_asset(&encrypted_request)
+        .await
+    {
+        Ok(response) => response,
+        Err(e) => EncryptedResponse {
+            status: Some(Status {
+                code: e.errcode(),
+                message: e.to_string(),
+                details: vec![],
+            }),
+            message: None,
+        },
+    };
+    let elapsed = now.elapsed();
+    if let Some(ref status) = reply.status {
+        log::info!(target: "monitor", "|get_tls_asset|{:?}|{:?}|{:?}", if status.code == 0 {"Y"} else {"N"}, elapsed.as_millis(), status.message);
     }
     Ok(Json(reply))
 }

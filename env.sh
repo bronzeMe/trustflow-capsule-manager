@@ -44,9 +44,9 @@ DOCKER_DEVICE_FLAGS="-v $CSV_DEVICE:$CSV_DEVICE"
 fi
 
 if [[ $1 == 'enter' ]]; then
-    sudo $DOCKER exec -it ${PROJECT}-build-$(whoami) bash
+    $DOCKER exec -it ${PROJECT}-build-$(whoami) bash
 else
-    sudo $DOCKER run --name ${PROJECT}-build-$(whoami) -td \
+    $DOCKER run --name ${PROJECT}-build-$(whoami) -td \
         --net host \
         $DOCKER_DEVICE_FLAGS \
         -v $DIR:/home/admin/dev \

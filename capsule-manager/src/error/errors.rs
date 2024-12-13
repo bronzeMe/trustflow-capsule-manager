@@ -183,6 +183,16 @@ impl From<Utf8Error> for Error {
     }
 }
 
+impl From<rsa::errors::Error> for Error {
+    fn from(e: rsa::errors::Error) -> Self {
+        Error {
+            code: ErrorCode::CryptoErr,
+            details: Some(Box::new(e.to_string())),
+            location: None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct ErrorLocation {
     line: u32,

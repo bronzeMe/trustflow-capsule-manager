@@ -15,7 +15,7 @@
 #
 
 LD_LIBRARY_PATH=/home/admin/lib && \
-  /home/admin/capsule_manager \
+  /home/admin/capsule_manager_grpc \
   --tls_config.enable_tls false  --log_config.log_dir log \
   --log_config.enable_console_logger true \
   --config_path config.yaml $@

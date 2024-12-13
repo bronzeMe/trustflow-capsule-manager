@@ -21,6 +21,7 @@ WORKDIR /home/admin/dev
 ENV PROTOC /root/.local/bin/protoc
 
 COPY Cargo.toml ./
+COPY Cargo.lock ./
 COPY capsule-manager ./capsule-manager
 COPY bin ./bin
 COPY script ./script
