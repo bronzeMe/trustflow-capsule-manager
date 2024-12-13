@@ -28,7 +28,7 @@ COPY script ./script
 
 RUN ./script/build.sh -p $PLATFORM
 
-FROM secretflow/trustedflow-release-ubuntu22.04:latest
+FROM secretflow/trustflow-release-ubuntu22.04:latest
 
 COPY --from=builder /lib/libverification.so /home/admin/lib/libverification.so
 COPY --from=builder /lib/libgeneration.so /home/admin/lib/libgeneration.so
