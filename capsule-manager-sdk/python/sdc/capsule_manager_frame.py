@@ -38,11 +38,13 @@ TEE_PLAT_SIM = "sim"
 TEE_PLAT_SGX = "sgx"
 TEE_PLAT_TDX = "tdx"
 TEE_PLAT_CSV = "csv"
+TEE_PLAT_HYPER = "hyper"
 
 # tee plat types in UAL Protobuf
 UAL_TEE_PLAT_SGX = "SGX_DCAP"
 UAL_TEE_PLAT_TDX = "TDX"
 UAL_TEE_PLAT_CSV = "CSV"
+UAL_TEE_PLAT_HYPER = "HyperEnclave"
 
 RESOURCE_URI = "resource_uri"
 DATA_KEY_B64 = "data_key_b64"
@@ -234,6 +236,12 @@ class CapsuleManagerFrame(object):
                 rule.hex_ta_measurement = self.tee_constraints.mr_ta
             elif self.tee_plat == TEE_PLAT_CSV:
                 rule.str_tee_platform = UAL_TEE_PLAT_CSV
+                rule.hex_boot_measurement = self.tee_constraints.mr_boot
+            elif self.tee_plat == TEE_PLAT_HYPER:
+                rule.bool_debug_disabled = "true"
+                rule.str_tee_platform = UAL_TEE_PLAT_HYPER
+                rule.hex_ta_measurement = self.tee_constraints.mr_ta
+                rule.hex_signer = self.tee_constraints.mr_signer
                 rule.hex_boot_measurement = self.tee_constraints.mr_boot
             else:
                 raise ValueError(f"Invalid TEE platform: {self.tee_plat}")

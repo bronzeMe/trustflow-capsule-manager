@@ -21,6 +21,7 @@ pub(crate) const HASH_SEPARATOR: &str = ".";
 pub const CERT_DAYS: u32 = 365;
 pub(crate) const TEE_PLATFORM_SGX: &str = "SGX_DCAP";
 pub(crate) const TEE_PLATFORM_TDX: &str = "TDX";
+pub(crate) const TEE_PLATFORM_HYPERENCLAVE: &str = "HyperEnclave";
 const TEE_PLATFORM_CSV: &str = "CSV";
 
 lazy_static! {

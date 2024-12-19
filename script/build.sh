@@ -58,6 +58,10 @@ case "$PLATFORM" in
     /root/.cargo/bin/cargo build -p grpc-as -p http-as --release --features production
     bash build_occlum.sh
     ;;
+  hyper)
+    /root/.cargo/bin/cargo build -p grpc-as -p http-as --release --features production
+    bash build_occlum.sh
+    ;;
   sim)
     /root/.cargo/bin/cargo build -p grpc-as -p http-as --release
     ;;
@@ -65,7 +69,7 @@ case "$PLATFORM" in
     /root/.cargo/bin/cargo build -p grpc-as -p http-as --release --features production
     ;;
   *)
-    echo -e "PLATFORM does not match any of options(sim/sgx/tdx/csv)"
+    echo -e "PLATFORM does not match any of options(sim/sgx/tdx/csv/hyper)"
     exit 1
     ;;
 esac

@@ -19,7 +19,7 @@ set -e
 show_help() {
     echo "Usage: bash install_attestation_lib.sh [OPTION]..."
     echo "  -p"
-    echo "       the platform to build with. sim/sgx/tdx/csv."
+    echo "       the platform to build with. sim/sgx/tdx/csv/hyper."
     echo "  -s"
     echo "       the path to save library."
     echo "  -h"
@@ -53,8 +53,9 @@ NC="\033[0m"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 cd $SCRIPT_DIR
 rm -rf trustflow
-git clone https://github.com/asterinas/trustflow.git
+git clone https://github.com/bronzeMe/trustflow.git
 cd trustflow
+git checkout dev/hyperenclave
 
 echo "build trustflow attestation"
 case "$PLATFORM" in
@@ -64,6 +65,10 @@ case "$PLATFORM" in
   sgx)
     bazel build -c opt --define tee_type=sgx2 //trustflow/...
     ;;
+  hyper)
+    bazel build --define tee_type=hyper //trustflow/attestation/generation/wrapper:libgeneration.so -c opt
+    bazel build //trustflow/attestation/verification/wrapper:libverification.so -c opt
+    ;;
   tdx)
     bazel build -c opt --define tee_type=tdx //trustflow/...
     ;;
@@ -71,7 +76,7 @@ case "$PLATFORM" in
     bazel build -c opt --define tee_type=csv //trustflow/...
     ;;
   *)
-    echo -e "PLATFORM does not match any of options(sim/sgx/tdx/csv)"
+    echo -e "PLATFORM does not match any of options(sim/sgx/tdx/csv/hyper)"
     exit 1
     ;;
 esac

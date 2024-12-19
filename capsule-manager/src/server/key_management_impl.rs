@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use super::CapsuleManagerImpl;
-use crate::common::constants::{HASH_SEPARATOR, TEE_PLATFORM_SGX, TEE_PLATFORM_TDX};
+use crate::common::constants::{HASH_SEPARATOR, TEE_PLATFORM_SGX, TEE_PLATFORM_TDX, TEE_PLATFORM_HYPERENCLAVE};
 use crate::core::model;
 use crate::core::model::policy;
 use crate::core::model::request::{Environment, TeeIdentity, TeeInfo, TeePlatform};
@@ -56,6 +56,7 @@ fn ra_verify(
 
     if attributes.str_tee_platform == TEE_PLATFORM_SGX
         || attributes.str_tee_platform == TEE_PLATFORM_TDX
+        || attributes.str_tee_platform == TEE_PLATFORM_HYPERENCLAVE
     {
         verified_attributes.bool_debug_disabled = "1".to_string();
     }
@@ -159,6 +160,14 @@ impl CapsuleManagerImpl {
                         mr_boot: attributes.hex_boot_measurement,
                     },
                     TeePlatform::CSV,
+                ),
+                "HyperEnclave" => (
+                    TeeIdentity::HyperEnclave {
+                        mr_enclave: attributes.hex_ta_measurement,
+                        mr_signer: attributes.hex_signer,
+                        mr_boot: attributes.hex_boot_measurement,
+                    },
+                    TeePlatform::HyperEnclave,
                 ),
                 _ => {
                     return Err(errno!(ErrorCode::UnsupportedErr, "unsupported platform"));

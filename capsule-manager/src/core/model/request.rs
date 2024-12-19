@@ -33,6 +33,13 @@ pub enum TeeIdentity {
         mr_signer: String,
     },
 
+    #[serde(rename = "hyper")]
+    HyperEnclave {
+        mr_enclave: String,
+        mr_signer: String,
+        mr_boot: String,
+    },
+
     #[serde(rename = "csv")]
     CSV { mr_boot: String },
 
@@ -48,6 +55,9 @@ pub enum TeeIdentity {
 pub enum TeePlatform {
     #[serde(rename = "sgx")]
     SGX,
+    
+    #[serde(rename = "hyper")]
+    HyperEnclave,
 
     #[serde(rename = "csv")]
     CSV,
